@@ -22,6 +22,10 @@ double rad_to_deg( double n ) {
 }
 
 int main( ) {
+    setlocale( LC_ALL, "rus" );
+
+    cout << "Введите необходимый угол: ";
+
     double x = 0.0;
     cin >> x;
 
@@ -46,6 +50,8 @@ int main( ) {
     cout << setprecision( 2 ) << fixed;
     cout << "sin: " << sum;
     cout << "\ncos: " << sum2;
+    cout << "\ntan: " << ( sum / sum2 );
+    cout << "\ncotan: " << ( sum2 / sum );
 
     return 0;
 }
