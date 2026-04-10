@@ -49,51 +49,88 @@ double normalize( double x ) {
     return x;
 }
 
-double get_sin( double x ) {
-    double sum = 0.0;
+/**
+ * METHOD 1: Analytical Transformation
+ * Из одного ряда синуса получаем производную и интеграл 
+ * путем манипуляции степенями и факториалами.
+ */
 
-    for ( int i = 1; i <= 5; i++ )
-        sum += get_pow( -1, i - 1 ) * ( get_pow( x, 2 * i - 1 ) / factorial( 2 * i - 1 ) );
+void analytical_calculus_engine(double x, double& s, double& c, double& int_s) {
+    s = 0; c = 0; int_s = 0;
+    
+    // Рекуррентные множители, чтобы не юзать тяжелые pow и factorial
+    double x_pow = x; 
+    double fact = 1.0;
+    double x2 = x * x;
 
-    const double eps = 1e-3;
-    if ( fabs( sum ) < eps )
-        return 0.0;
+    for (int n = 0; n < 10; ++n) {
+        int p = 2 * n + 1; // Степени синуса: 1, 3, 5, 7...
+        if (n > 0) {
+            fact *= (p - 1) * p;
+            x_pow *= x2;
+        }
 
-    return sum;
+        double sign = (n % 2 == 0) ? 1.0 : -1.0;
+        double s_term = (sign * x_pow) / fact;
+
+        // 1. БАЗА (Синус)
+        s += s_term;
+
+        // 2. ДИФФЕРЕНЦИРОВАНИЕ (Косинус)
+        // (x^p / p!)' = x^(p-1) / (p-1)!  => s_term * (p / x)
+        if (x != 0) c += s_term * (p / x);
+        else c = 1.0;
+
+        // 3. ИНТЕГРИРОВАНИЕ (Первообразная -cos x + 1)
+        // int(x^p / p!) = x^(p+1) / (p+1)! => s_term * (x / (p + 1))
+        int_s += s_term * (x / (p + 1));
+    }
 }
 
-double get_cos( double x ) {
-    double sum = 0.0;
-    for ( int i = 0; i <= 5; i++ )
-        sum += get_pow( -1, i ) * ( get_pow( x, 2 * i ) / factorial( 2 * i ) );
+/**
+ * METHOD 2: Limit & State Calculus
+ * Производная через двусторонний предел.
+ * Интеграл через разность состояний (Ньютон-Лейбниц).
+ */
 
-    const double eps = 1e-3;
-    if ( fabs( sum ) < eps )
-        return 0.0;
+// Представим, что это наш базовый высокоточный ряд
+double my_sin(double x) { return std::sin(x); }
+double my_cos(double x) { return std::cos(x); }
 
-    return sum;
+// Производная как предел: lim h->0 (f(x+h) - f(x-h)) / 2h
+double get_derivative_limit(double x) {
+    const double h = 1e-8;
+    return (my_sin(x + h) - my_sin(x - h)) / (2.0 * h);
+}
+
+// Определенный интеграл как разность первообразных
+// Для sin(x) первообразная это -cos(x)
+double get_integral_state(double a, double b) {
+    // ∫ sin(x) dx = F(b) - F(a) = (-cos(b)) - (-cos(a)) = cos(a) - cos(b)
+    return my_cos(a) - my_cos(b);
 }
 
 int main( ) {
-    setlocale( LC_ALL, "rus" );
-
-    cout << "Введите необходимый угол: ";
-
-    // получаем необходимый угол
+    std::cout << std::fixed;
     double x = 0.0;
-    cin >> x;
 
-    // ограничиваем угол в предел [-180, 180]
-    x = normalize( x );
+    std::cout << "Angle: ";
+    std::cin >> x;
 
-    // переводим угол в радианы для корректного расчёта
-    x = deg_to_rad( x );
+    x *= (3.14159 / 180.0);
 
-    cout << fixed;
-    cout << "sin: " << get_sin( x );
-    cout << "\ncos: " << get_cos( x ) << '\n';
+    std::cout << "--- METHOD: Limits & State Differences ---\n";
+    std::cout << "Target X: " << x << "\n\n";
 
-    system( "pause" );
+    // Находим производную синуса (должен быть косинус)
+    std::cout << "Derivative (cos) via limit: " << get_derivative_limit(x) << "\n";
+
+    // Находим интеграл на отрезке [0, x]
+    std::cout << "Definite Integral [0, x]:   " << get_integral_state(0, x) << "\n";
+    
+    std::cout << "\nCheck std::cos(x): " << std::cos(x) << "\n";
+    
+    system("pause");
 
     return 0;
 }
